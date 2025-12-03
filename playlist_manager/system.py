@@ -40,53 +40,68 @@ class PlaylistSystem:
         return False
 
     def run(self):
-        """Main event loop; shows menu and dispatches choices after login."""
+        # Main event loop; shows menu and dispatches choices after login.
         if not self.login():
             return
         while True:
             print("""
-1 Add song
-2 Edit song
-3 Rename playlist
-4 Delete playlist
-5 Remove song
-6 Find duplicates
-7 Sort playlists
-8 Sort songs
-9 Shuffle songs
-10 Export
-11 Exit
-12 Import playlist from file
+1. Add song
+2. Edit song
+3. Rename playlist
+4. Delete playlist
+5. Remove song
+6. Find duplicates
+7. Sort playlists
+8. Sort songs
+9. Shuffle songs
+10. Export
+11. Exit
+12. Import playlist from file
 """)
             self.handle_menu(input("Choose: "))
 
     def handle_menu(self, c):
-        """Dispatch menu option "c" to the corresponding flow."""
-        if c=="1": self.add_song_flow()
-        elif c=="2": self.edit_song_flow()
-        elif c=="3": self.rename_playlist_flow()
-        elif c=="4": self.delete_playlist_flow()
-        elif c=="5": self.remove_song_flow()
-        elif c=="6": self.find_duplicates_flow()
-        elif c=="7": self.sort_playlists()
-        elif c=="8": self.sort_songs_in_playlists()
-        elif c=="9": self.shuffle_songs_in_playlists()
-        elif c=="10": self.export_playlists()
-        elif c=="11": exit()
-        elif c=="12": self.import_playlist_flow()
-        else: print("Invalid")
+        # Dispatch menu option to the corresponding flow using a dictionary.
+        match c:
+            case "1":
+                self.add_song_flow()
+            case "2":
+                self.edit_song_flow()
+            case "3":
+                self.rename_playlist_flow()
+            case "4":
+                self.delete_playlist_flow()
+            case "5":
+                self.remove_song_flow()
+            case "6":
+                self.find_duplicates_flow()
+            case "7":
+                self.sort_playlists()
+            case "8":
+                self.sort_songs_in_playlists()
+            case "9":
+                self.shuffle_songs_in_playlists()
+            case "10":
+                self.export_playlists()
+            case "11":
+                exit()
+            case "12":
+                self.import_playlist_flow()
+            case _:
+                print("Invalid")
 
     # Empty placeholder flows
     def add_song_flow(self):
-        """Collect song details and add to the given playlist."""
+        # Collect song details and add to the given playlist.
         playlist_name = input("Playlist name: ")
         name = input("Song name: ")
         singer = input("Singer: ")
         genre = input("Genre: ")
         self.add_song(playlist_name, name, singer, genre)
         print("Song added successfully.")
+
     def edit_song_flow(self):
-        """Edit an existing song's name/singer/genre inside a playlist."""
+        # Edit an existing song's name/singer/genre inside a playlist.
         playlist_name = input("Playlist name: ")
         if playlist_name not in self.playlists:
             print("Playlist not found.")
@@ -101,7 +116,7 @@ class PlaylistSystem:
         else:
             print("Song not found.")
     def rename_playlist_flow(self):
-        """Rename a playlist if the old exists and new does not."""
+        # Rename a playlist if the old exists and new does not.
         old_name = input("Current playlist name: ")
         new_name = input("New playlist name: ")
         if old_name not in self.playlists:
@@ -113,7 +128,7 @@ class PlaylistSystem:
         self.playlists[new_name] = self.playlists.pop(old_name)
         print("Playlist renamed.")
     def delete_playlist_flow(self):
-        """Delete a playlist by name if it exists."""
+        # Delete a playlist by name if it exists.
         name = input("Playlist name: ")
         if name in self.playlists:
             del self.playlists[name]
@@ -202,14 +217,14 @@ class PlaylistSystem:
         return True
 
     def delete_playlist(self, name):
-        """Delete a playlist by name; returns True if deleted, else False."""
+        # Delete a playlist by name; returns True if deleted, else False.
         if name in self.playlists:
             del self.playlists[name]
             return True
         return False
 
     def remove_song(self, playlist_name, song_name):
-        """Remove a song from a playlist; returns True if playlist exists."""
+        # Remove a song from a playlist; returns True if playlist exists.
         if playlist_name not in self.playlists:
             return False
         self.playlists[playlist_name].remove_song(song_name)
@@ -224,6 +239,7 @@ class PlaylistSystem:
         - It appears multiple times within any single playlist.
         """
         occ = {}
+
         for pname, playlist in self.playlists.items():
             counts = {}
             for s in playlist.songs:
@@ -234,6 +250,7 @@ class PlaylistSystem:
                     occ[key] = {}
                 occ[key][pname] = cnt
         result = {}
+
         for key, per_pl in occ.items():
             pl_names = list(per_pl.keys())
             multiple_playlists = len(pl_names) > 1
@@ -280,6 +297,7 @@ class PlaylistSystem:
         if playlist_name not in self.playlists:
             self.playlists[playlist_name] = Playlist(playlist_name)
         count = 0
+
         try:
             with open(path, "r") as f:
                 for line in f:
@@ -292,6 +310,8 @@ class PlaylistSystem:
                     name, singer, genre = parts
                     self.playlists[playlist_name].add_song(Song(name, singer, genre))
                     count += 1
+                    
         except FileNotFoundError:
             return 0
+        
         return count
