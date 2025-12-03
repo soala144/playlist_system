@@ -1,0 +1,3 @@
+Playlist: Rock
+- Song1 by Artist1 (Genre1)
+- Song2 by Artist2 (Genre2)

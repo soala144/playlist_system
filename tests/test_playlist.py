@@ -31,3 +31,26 @@ def test_remove_song():
     s.remove_song("L", "A")
     assert len(s.playlists["L"].songs) == 1
     assert s.playlists["L"].songs[0].name == "B"
+
+def test_sort_songs():
+    p = Playlist("L")
+    p.add_song(Song("A","S","G"))
+    p.add_song(Song("C","S","G"))
+    p.add_song(Song("B","S","G"))
+    p.sort_songs()
+    assert [s.name for s in p.songs] == ["A","B","C"]
+
+def test_shuffle_songs():
+    p = Playlist("L")
+    p.add_song(Song("A","S","G"))
+    p.add_song(Song("B","S","G"))
+    p.add_song(Song("C","S","G"))
+    original = [s.name for s in p.songs]
+    changed = False
+    for _ in range(10):
+        p.shuffle_songs()
+        if [s.name for s in p.songs] != original:
+            changed = True
+            break
+    assert changed
+    assert sorted([s.name for s in p.songs]) == sorted(original)
