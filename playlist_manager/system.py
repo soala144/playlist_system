@@ -16,26 +16,29 @@ class PlaylistSystem:
     def login(self):
         """Authenticate the user before granting access to features.
 
-        Prompts for username once; if recognized, allows up to three
-        password attempts. On incorrect password, prints an error and
-        re-prompts for password without asking for username again.
+        Allows up to three attempts total. If the username is wrong,
+        restart and ask for both username and password again. If the
+        username is correct but the password is wrong, print an error
+        and re-prompt only the password until attempts are exhausted.
 
-        Returns True on success; otherwise returns False after exhausting
-        attempts or when username is unrecognized.
+        Returns True on success; otherwise returns False.
         """
         attempts = 3
-        user = input("Username: ")
-        if user != self.username:
-            print("Username not recognized.")
-            return False
         while attempts > 0:
-            pw = input("Password: ")
-            if pw == self.password:
-                print("Login successful")
-                return True
-            attempts -= 1
-            if attempts > 0:
-                print("Password is not correct")
+            user = input("Username: ")
+            if user != self.username:
+                print("Username not recognized.")
+                attempts -= 1
+                continue
+            while attempts > 0:
+                pw = input("Password: ")
+                if pw == self.password:
+                    print("Login successful")
+                    return True
+                attempts -= 1
+                if attempts > 0:
+                    print("Password is not correct")
+            break
         print("Too many attempts. Locked (simulated).")
         return False
 
@@ -92,35 +95,89 @@ class PlaylistSystem:
 
     # Empty placeholder flows
     def add_song_flow(self):
-        # Collect song details and add to the given playlist.
-        playlist_name = input("Playlist name: ")
+        if not self.playlists:
+            print("No playlists exist. Create a new one.")
+            new_name = input("New playlist name: ")
+            if not new_name:
+                print("No name entered.")
+                return
+            self.playlists[new_name] = Playlist(new_name)
+
+        names = list(self.playlists.keys())
+        print("Playlists:")
+        for i, nm in enumerate(names, 1):
+            print(f"{i}. {nm}")
+        choice = input('Select a playlist by number or type "new": ').strip()
+
+        if choice.lower() == "new":
+            new_name = input("New playlist name: ")
+            if not new_name:
+                print("No name entered.")
+                return
+            if new_name in self.playlists:
+                print("A playlist with this name already exists.")
+                return
+            self.playlists[new_name] = Playlist(new_name)
+            target = new_name
+        else:
+            if not choice.isdigit() or not (1 <= int(choice) <= len(names)):
+                print("Invalid selection.")
+                return
+            target = names[int(choice) - 1]
+
         name = input("Song name: ")
         singer = input("Singer: ")
         genre = input("Genre: ")
-        self.add_song(playlist_name, name, singer, genre)
+        self.add_song(target, name, singer, genre)
+        if self.playlists[target].has_duplicate(name):
+            print("Warning: duplicate song in playlist.")
         print("Song added successfully.")
 
     def edit_song_flow(self):
-        # Edit an existing song's name/singer/genre inside a playlist.
-        playlist_name = input("Playlist name: ")
-        if playlist_name not in self.playlists:
-            print("Playlist not found.")
+        if not self.playlists:
+            print("No playlists exist.")
             return
-        old = input("Old song name: ")
+        names = list(self.playlists.keys())
+        print("Playlists:")
+        for i, nm in enumerate(names, 1):
+            print(f"{i}. {nm}")
+        choice = input("Select a playlist by number: ").strip()
+        if not choice.isdigit() or not (1 <= int(choice) <= len(names)):
+            print("Invalid selection.")
+            return
+        playlist_name = names[int(choice) - 1]
+        p = self.playlists[playlist_name]
+        if not p.songs:
+            print("No songs in playlist.")
+            return
+        print("Songs:")
+        for s in p.songs:
+            print(f"- {s.name} by {s.singer} ({s.genre})")
+        old = input("Song name to edit: ").strip()
         new = input("New song name: ")
         singer = input("New singer: ")
         genre = input("New genre: ")
-        updated = self.playlists[playlist_name].update_song(old, new, singer, genre)
+        updated = p.update_song(old, new, singer, genre)
         if updated:
             print("Song updated.")
         else:
             print("Song not found.")
     def rename_playlist_flow(self):
-        # Rename a playlist if the old exists and new does not.
-        old_name = input("Current playlist name: ")
-        new_name = input("New playlist name: ")
-        if old_name not in self.playlists:
-            print("Playlist not found.")
+        if not self.playlists:
+            print("No playlists exist.")
+            return
+        names = list(self.playlists.keys())
+        print("Playlists:")
+        for i, nm in enumerate(names, 1):
+            print(f"{i}. {nm}")
+        choice = input("Select a playlist by number: ").strip()
+        if not choice.isdigit() or not (1 <= int(choice) <= len(names)):
+            print("Invalid selection.")
+            return
+        old_name = names[int(choice) - 1]
+        new_name = input("New playlist name: ").strip()
+        if not new_name:
+            print("No name entered.")
             return
         if new_name in self.playlists:
             print("A playlist with this name already exists.")
@@ -128,29 +185,59 @@ class PlaylistSystem:
         self.playlists[new_name] = self.playlists.pop(old_name)
         print("Playlist renamed.")
     def delete_playlist_flow(self):
-        # Delete a playlist by name if it exists.
-        name = input("Playlist name: ")
-        if name in self.playlists:
+        if not self.playlists:
+            print("No playlists exist.")
+            return
+        names = list(self.playlists.keys())
+        print("Playlists:")
+        for i, nm in enumerate(names, 1):
+            print(f"{i}. {nm}")
+        choice = input("Select a playlist by number: ").strip()
+        if not choice.isdigit() or not (1 <= int(choice) <= len(names)):
+            print("Invalid selection.")
+            return
+        name = names[int(choice) - 1]
+        confirm = input("Are you sure? (y/n): ").strip().lower()
+        if confirm == "y":
             del self.playlists[name]
             print("Playlist deleted.")
         else:
-            print("Playlist not found.")
+            print("Cancelled.")
     def remove_song_flow(self):
-        """Remove a song by name from the specified playlist."""
-        playlist_name = input("Playlist name: ")
-        if playlist_name not in self.playlists:
-            print("Playlist not found.")
+        if not self.playlists:
+            print("No playlists exist.")
             return
-        song_name = input("Song name to remove: ")
-        self.playlists[playlist_name].remove_song(song_name)
+        names = list(self.playlists.keys())
+        print("Playlists:")
+        for i, nm in enumerate(names, 1):
+            print(f"{i}. {nm}")
+        choice = input("Select a playlist by number: ").strip()
+        if not choice.isdigit() or not (1 <= int(choice) <= len(names)):
+            print("Invalid selection.")
+            return
+        playlist_name = names[int(choice) - 1]
+        p = self.playlists[playlist_name]
+        if not p.songs:
+            print("No songs in playlist.")
+            return
+        print("Songs:")
+        for s in p.songs:
+            print(f"- {s.name} by {s.singer} ({s.genre})")
+        song_name = input("Song name to remove: ").strip()
+        p.remove_song(song_name)
         print("Song removed.")
     def find_duplicates_flow(self):
-        """Scan playlists and print duplicate songs across or within lists."""
-        duplicates = self.find_duplicates()
-        if duplicates:
-            for name, lists in duplicates.items():
-                print(f"Duplicate song found: {name} in playlists: {', '.join(lists)}")
-        else:
+        found = False
+        for pname, p in self.playlists.items():
+            printed = set()
+            for s in p.songs:
+                if p.has_duplicate(s.name):
+                    key = s.name.lower()
+                    if key not in printed:
+                        print(f"Duplicate song in {pname}: {s.name}")
+                        printed.add(key)
+                        found = True
+        if not found:
             print("No duplicates found.")
 
     def import_playlist_flow(self):
@@ -178,10 +265,11 @@ class PlaylistSystem:
 
     def sort_playlists(self):
         """Sort playlists case-insensitively and return the ordered names."""
-        # Use stable sort with case-insensitive key for predictable ordering
         sorted_items = sorted(self.playlists.items(), key=lambda x: x[0].lower())
         self.playlists = dict(sorted_items)
-        print("Playlists sorted")
+        print("Playlists sorted:")
+        for name, _ in sorted_items:
+            print(f"- {name}")
         return [name for name, _ in sorted_items]
 
     def sort_songs_in_playlists(self):
