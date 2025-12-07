@@ -26,7 +26,7 @@ class PlaylistSystem:
         attempts = 3
         while attempts > 0:
             user = input("Username: ")
-            if user != self.username:
+            if user != self.username:    
                 print("Username not recognized.")
                 attempts -= 1
                 continue
@@ -91,7 +91,7 @@ class PlaylistSystem:
             case "12":
                 self.import_playlist_flow()
             case _:
-                print("Invalid")
+                print("Invalid O ption")
 
     # Empty placeholder flows
     def add_song_flow(self):
