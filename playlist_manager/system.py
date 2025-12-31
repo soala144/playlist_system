@@ -13,6 +13,10 @@ class PlaylistSystem:
         self.username = "user123"
         self.password = "Givemetheykey123"
 
+    def _sanitize(self, text):
+        # Trim leading/trailing whitespace and collapse internal multiple spaces
+        return " ".join(text.strip().split())
+
     def login(self):
         """Authenticate the user before granting access to features.
 
@@ -97,7 +101,7 @@ class PlaylistSystem:
     def add_song_flow(self):
         if not self.playlists:
             print("No playlists exist. Create a new one.")
-            new_name = input("New playlist name: ")
+            new_name = self._sanitize(input("New playlist name: "))
             if not new_name:
                 print("No name entered.")
                 return
@@ -110,7 +114,7 @@ class PlaylistSystem:
         choice = input('Select a playlist by number or type "new": ').strip()
 
         if choice.lower() == "new":
-            new_name = input("New playlist name: ")
+            new_name = self._sanitize(input("New playlist name: "))
             if not new_name:
                 print("No name entered.")
                 return
@@ -125,9 +129,9 @@ class PlaylistSystem:
                 return
             target = names[int(choice) - 1]
 
-        name = input("Song name: ")
-        singer = input("Singer: ")
-        genre = input("Genre: ")
+        name = self._sanitize(input("Song name: "))
+        singer = self._sanitize(input("Singer: "))
+        genre = self._sanitize(input("Genre: "))
         self.add_song(target, name, singer, genre)
         if self.playlists[target].has_duplicate(name):
             print("Warning: duplicate song in playlist.")
@@ -153,11 +157,48 @@ class PlaylistSystem:
         print("Songs:")
         for s in p.songs:
             print(f"- {s.name} by {s.singer} ({s.genre})")
-        old = input("Song name to edit: ").strip()
-        new = input("New song name: ")
-        singer = input("New singer: ")
-        genre = input("New genre: ")
-        updated = p.update_song(old, new, singer, genre)
+        # Keep asking for the song name until it is found
+        while True:
+            old = self._sanitize(input("Enter the song name to edit: "))
+            target_song = None
+            for s in p.songs:
+                if s.name.lower() == old.lower():
+                    target_song = s
+                    break
+            if target_song:
+                break
+            print("Song not found. Please try again.")
+
+        print("\nWhat do you want to update?")
+        print("1. Name")
+        print("2. Artist")
+        print("3. Genre")
+        print("4. All fields")
+        print("5. Cancel")
+        opt = input("Choose: ").strip()
+
+        new_name = target_song.name
+        new_singer = target_song.singer
+        new_genre = target_song.genre
+
+        if opt == "1":
+            new_name = self._sanitize(input("New song name: "))
+        elif opt == "2":
+            new_singer = self._sanitize(input("New singer: "))
+        elif opt == "3":
+            new_genre = self._sanitize(input("New genre: "))
+        elif opt == "4":
+            new_name = self._sanitize(input("New song name: "))
+            new_singer = self._sanitize(input("New singer: "))
+            new_genre = self._sanitize(input("New genre: "))
+        elif opt == "5":
+            print("Cancelled.")
+            return
+        else:
+            print("Invalid selection.")
+            return
+
+        updated = p.update_song(old, new_name, new_singer, new_genre)
         if updated:
             print("Song updated.")
         else:
@@ -170,12 +211,15 @@ class PlaylistSystem:
         print("Playlists:")
         for i, nm in enumerate(names, 1):
             print(f"{i}. {nm}")
-        choice = input("Select a playlist by number: ").strip()
-        if not choice.isdigit() or not (1 <= int(choice) <= len(names)):
-            print("Invalid selection.")
-            return
-        old_name = names[int(choice) - 1]
-        new_name = input("New playlist name: ").strip()
+        choice = input("Select a playlist by number or type its name: ").strip()
+        if choice.isdigit() and (1 <= int(choice) <= len(names)):
+            old_name = names[int(choice) - 1]
+        else:
+            old_name = choice
+            if old_name not in self.playlists:
+                print("Playlist not found.")
+                return
+        new_name = self._sanitize(input("New playlist name: "))
         if not new_name:
             print("No name entered.")
             return
@@ -223,7 +267,7 @@ class PlaylistSystem:
         print("Songs:")
         for s in p.songs:
             print(f"- {s.name} by {s.singer} ({s.genre})")
-        song_name = input("Song name to remove: ").strip()
+        song_name = self._sanitize(input("Song name to remove: "))
         p.remove_song(song_name)
         print("Song removed.")
     def find_duplicates_flow(self):
@@ -254,14 +298,14 @@ class PlaylistSystem:
         """Add a song to a playlist, creating the playlist if missing."""
         if playlist_name not in self.playlists:
             self.playlists[playlist_name] = Playlist(playlist_name)
-        song = Song(name, singer, genre)
+        song = Song(self._sanitize(name), self._sanitize(singer), self._sanitize(genre))
         self.playlists[playlist_name].add_song(song)
 
     def edit_song(self, playlist_name, old, new, singer, genre):
         """Edit a song in a playlist; returns True if updated, else False."""
         if playlist_name not in self.playlists:
             return False
-        return self.playlists[playlist_name].update_song(old, new, singer, genre)
+        return self.playlists[playlist_name].update_song(self._sanitize(old), self._sanitize(new), self._sanitize(singer), self._sanitize(genre))
 
     def sort_playlists(self):
         """Sort playlists case-insensitively and return the ordered names."""
@@ -273,12 +317,16 @@ class PlaylistSystem:
         return [name for name, _ in sorted_items]
 
     def sort_songs_in_playlists(self):
-        """Sort songs in each playlist and return mapping of names -> orders."""
+        """Sort songs in each playlist and return mapping of names -> orders, printing results."""
         result = {}
+        print("Songs sorted:")
         for name, p in self.playlists.items():
             p.sort_songs()
-            result[name] = [s.name for s in p.songs]
-        print("Songs sorted")
+            ordered = [s.name for s in p.songs]
+            result[name] = ordered
+            print(f"- {name}")
+            for sname in ordered:
+                print(f"  - {sname}")
         return result
 
     def shuffle_songs_in_playlists(self):
