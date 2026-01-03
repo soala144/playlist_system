@@ -1,3 +1,5 @@
-Playlist: Soso
-- Lost by Artist2 (Hip-hop)
+Playlist: Song
 - Song1 by Artist1 (Pop)
+- Song2 by Artist2 (Hip-hop)
+Playlist: Songs for You
+- SongA by Singer A (Jazz)
